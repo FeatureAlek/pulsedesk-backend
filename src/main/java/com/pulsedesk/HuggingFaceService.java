@@ -26,13 +26,17 @@ public class HuggingFaceService {
                 """.formatted(content);
 
         String requestBody = objectMapper.writeValueAsString(Map.of(
-            "inputs", prompt,
-            "parameters", Map.of("max_new_tokens", 200, "return_full_text", false)
+            "model", "Qwen/Qwen2.5-7B-Instruct",
+            "messages", new Object[]{
+                Map.of("role", "user", "content", prompt)
+            },
+            "max_tokens", 200,
+            "stream", false
         ));
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"))
+            .uri(URI.create("https://router.huggingface.co/v1/chat/completions"))
             .header("Authorization", "Bearer " + apiToken)
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
@@ -47,8 +51,7 @@ public class HuggingFaceService {
     private TicketAnalysis parseResponse(String responseBody) {
         try {
             var root = objectMapper.readTree(responseBody);
-            String text = root.get(0).get("generated_text").asText();
-
+            String text = root.get("choices").get(0).get("message").get("content").asText();
             int start = text.indexOf("{");
             int end = text.lastIndexOf("}") + 1;
             if (start == -1 || end == 0) return fallbackAnalysis();
