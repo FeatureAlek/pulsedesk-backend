@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PulseDesk</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f4f6f8; color: #333; }
+        header { background: #1a1a2e; color: white; padding: 20px 40px; }
+        header h1 { font-size: 24px; }
+        header p { font-size: 14px; color: #aaa; margin-top: 4px; }
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        h2 { margin-bottom: 16px; font-size: 18px; color: #1a1a2e; }
+        textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical; min-height: 100px; }
+        button { margin-top: 12px; padding: 10px 24px; background: #1a1a2e; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #16213e; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        #status { margin-top: 10px; font-size: 14px; color: #555; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #f0f2f5; text-align: left; padding: 10px 12px; border-bottom: 2px solid #ddd; }
+        td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+        tr:last-child td { border-bottom: none; }
+        .badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .high { background: #ffe0e0; color: #c0392b; }
+        .medium { background: #fff3cd; color: #856404; }
+        .low { background: #d4edda; color: #155724; }
+        .bug { background: #f8d7da; color: #721c24; }
+        .account { background: #d1ecf1; color: #0c5460; }
+        .billing { background: #fff3cd; color: #856404; }
+        .feature { background: #d4edda; color: #155724; }
+        .other { background: #e2e3e5; color: #383d41; }
+        .empty { text-align: center; color: #aaa; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>PulseDesk</h1>
+    <p>Comment-to-Ticket Triage System</p>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Submit a Comment</h2>
+        <textarea id="commentInput" placeholder="Enter user comment here..."></textarea>
+        <button id="submitBtn" onclick="submitComment()">Analyze & Submit</button>
+        <p id="status"></p>
+    </div>
+
+    <div class="card">
+        <h2>Tickets</h2>
+        <div id="ticketsTable"><p class="empty">No tickets yet.</p></div>
+    </div>
+
+    <div class="card">
+        <h2>All Comments</h2>
+        <div id="commentsTable"><p class="empty">No comments yet.</p></div>
+    </div>
+
+</div>
+
+<script>
+    async function submitComment() {
+        const content = document.getElementById("commentInput").value.trim();
+        if (!content) return;
+
+        const btn = document.getElementById("submitBtn");
+        const status = document.getElementById("status");
+        btn.disabled = true;
+        status.textContent = "Analyzing with AI...";
+
+        try {
+            const res = await fetch("/comments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content })
+            });
+            await res.json();
+            document.getElementById("commentInput").value = "";
+            status.textContent = "✅ Comment submitted!";
+            loadData();
+        } catch (e) {
+            status.textContent = "❌ Error submitting comment.";
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function loadData() {
+        // Load tickets
+        const ticketsRes = await fetch("/tickets");
+        const tickets = await ticketsRes.json();
+        const ticketsDiv = document.getElementById("ticketsTable");
+        if (tickets.length === 0) {
+            ticketsDiv.innerHTML = '<p class="empty">No tickets yet.</p>';
+        } else {
+            ticketsDiv.innerHTML = `
+                <table>
+                    <thead><tr><th>ID</th><th>Title</th><th>Category</th><th>Priority</th><th>Summary</th></tr></thead>
+                    <tbody>
+                        ${tickets.map(t => `
+                            <tr>
+                                <td>${t.id}</td>
+                                <td>${t.title}</td>
+                                <td><span class="badge ${t.category}">${t.category}</span></td>
+                                <td><span class="badge ${t.priority}">${t.priority}</span></td>
+                                <td>${t.summary}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>`;
+        }
+
+        // Load comments
+        const commentsRes = await fetch("/comments");
+        const comments = await commentsRes.json();
+        const commentsDiv = document.getElementById("commentsTable");
+        if (comments.length === 0) {
+            commentsDiv.innerHTML = '<p class="empty">No comments yet.</p>';
+        } else {
+            commentsDiv.innerHTML = `
+                <table>
+                    <thead><tr><th>ID</th><th>Comment</th><th>Date</th></tr></thead>
+                    <tbody>
+                        ${comments.map(c => `
+                            <tr>
+                                <td>${c.id}</td>
+                                <td>${c.content}</td>
+                                <td>${new Date(c.createdAt).toLocaleString()}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>`;
+        }
+    }
+
+    loadData();
+</script>
+
+</body>
+</html>
