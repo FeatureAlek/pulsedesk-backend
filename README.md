@@ -13,6 +13,22 @@ Each submitted comment is analyzed by the `Qwen/Qwen2.5-7B-Instruct` model via H
 - Spring Data JPA + H2 (in-memory database)
 - Hugging Face Inference API
 
+## Requirements Checklist
+
+- ✅ Submit and view comments (`POST /comments`, `GET /comments`)
+- ✅ Analyze comments using Hugging Face Inference API
+- ✅ Decide if comment should become a ticket
+- ✅ Generate title, category, priority, and summary
+- ✅ Store data in H2 in-memory database
+- ✅ API to view tickets (`GET /tickets`, `GET /tickets/{id}`)
+- ✅ Simple UI (bonus)
+
+## UI
+
+A simple web interface is available at `http://localhost:8080`
+
+![PulseDesk UI](screenshots/ui.png)
+
 ## Setup
 
 ### 1. Clone the repository
