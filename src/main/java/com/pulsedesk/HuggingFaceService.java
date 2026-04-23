@@ -17,13 +17,19 @@ public class HuggingFaceService {
 
     public TicketAnalysis analyzeComment(String content) throws Exception {
         String prompt = """
-                Analyze this user comment and decide if it should become a support ticket.
-                Comment: "%s"
-                Respond ONLY in JSON format, no extra text:
-                {"isTicket": true, "title": "short title", "category": "bug", "priority": "high", "summary": "short summary"}
-                category must be one of: bug, feature, billing, account, other
-                priority must be one of: low, medium, high
-                """.formatted(content);
+            Analyze this user comment and decide if it should become a support ticket.
+            Comment: "%s"
+            
+            Priority rules:
+            - high: system is broken, user cannot use the app, data loss, security issue
+            - medium: feature is degraded but workaround exists, billing issue
+            - low: minor UI issue, typo, small suggestion, cosmetic problem
+            
+            Respond ONLY in JSON format, no extra text:
+            {"isTicket": true, "title": "short title", "category": "bug", "priority": "low", "summary": "short summary"}
+            category must be one of: bug, feature, billing, account, other
+            priority must be one of: low, medium, high
+            """.formatted(content);
 
         String requestBody = objectMapper.writeValueAsString(Map.of(
             "model", "Qwen/Qwen2.5-7B-Instruct",
